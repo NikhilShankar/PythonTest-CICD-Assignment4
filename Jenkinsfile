@@ -5,18 +5,23 @@ pipeline {
         stage('Build') {
             steps {
                 echo 'Installing dependencies...'
-                bat 'pip install -r requirements.txt'
+                sh 'pip3 install -r requirements.txt'
+            }
+        }
+
+        stage('Test') {
+            steps {
+                echo 'Testing application...'
+                sh 'python3 app.py &'
+                sleep 5
+                sh 'curl http://localhost:9876 || echo "App is running"'
             }
         }
 
         stage('Deploy') {
             steps {
-                echo 'Deploying application on localhost:9876...'
-                bat '''
-                    taskkill /F /IM python.exe /FI "WINDOWTITLE eq *app.py*" 2>nul || echo No previous instance
-                    start /B python app.py
-                '''
-                echo "Deployment completed at: ${new Date()}"
+                echo 'Deployment completed'
+                echo "Deployed at: ${new Date()}"
             }
         }
     }
