@@ -1,4 +1,17 @@
 pipeline {
+
+    triggers {
+        GenericTrigger(
+            genericVariables: [
+                [key: 'ref', value: '$.ref']
+            ],
+            causeString: 'Triggered by Gitea',
+            token: 'my-secret-gitea-token-123',  // <-- This is YOUR_TOKEN
+            printContributedVariables: true,
+            printPostContent: true
+        )
+    }
+
     agent any
 
     stages {
