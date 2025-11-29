@@ -45,7 +45,7 @@ This assignment demonstrates a complete CI/CD pipeline using Jenkins deployed on
 
 Richard deployed Jenkins on the Kubernetes cluster using configurations from the `container-asssignment3` repository (branch: `assignment4`).
 
-![Initial Pipeline Setup](Screenshots/1_TriggerStartingPipeline.png)
+![Initial Pipeline Setup](Screenshots/1.TriggerStartingPipeline.png)
 
 ### 2. Python Application Repository
 
@@ -61,11 +61,11 @@ Created a Flask-based Python application with the following structure:
 - Trigger: Push events
 - Content-Type: `application/json`
 
-![GitHub Webhook Setup](Screenshots/2_WebhookSetupInGithubToJenkins.png)
+![GitHub Webhook Setup](Screenshots/2.WebhookSetupInGithubToJenkins.png)
 
 **Pipeline Trigger Test:**
 
-![GitHub Push Trigger](Screenshots/4_PipelineTrigggeredFromGithubPush.png)
+![GitHub Push Trigger](Screenshots/4.PipelineTrigggeredFromGithubPush.png)
 
 ### 4. Gitea Integration
 
@@ -73,23 +73,23 @@ Created a Flask-based Python application with the following structure:
 
 Cloned the GitHub repository to self-hosted Gitea instance.
 
-![Gitea Repository](Screenshots/6_CloneOfRepoInGitea.png)
+![Gitea Repository](Screenshots/6.CloneOfRepoInGitea.png)
 
 **Generic Webhook Configuration:**
 
 Installed Generic Webhook Trigger Plugin in Jenkins and configured Gitea webhook.
 
-![Gitea Webhook Setup](Screenshots/5_SettingUpGenericWebhookInGitea.png)
+![Gitea Webhook Setup](Screenshots/5.SettingUpGenericWebhookInGitea.png)
 
 **Code Change Test:**
 
 Modified `app.py` in Gitea to test pipeline trigger.
 
-![Gitea Code Change](Screenshots/3_RepoChangeInGiteaToTestJenkinsTrigger.png)
+![Gitea Code Change](Screenshots/3.RepoChangeInGiteaToTestJenkinsTrigger.png)
 
 **Successful Pipeline Execution:**
 
-![Gitea Trigger Success](Screenshots/7_TriggeredByGiteaAndPipelineSuccess.png)
+![Gitea Trigger Success](Screenshots/7.TriggeredByGiteaAndPipelineSuccess.png)
 
 ---
 
@@ -99,27 +99,67 @@ The pipeline consists of three stages:
 
 ```groovy
 pipeline {
+
+    triggers {
+        GenericTrigger(
+            genericVariables: [
+                [key: 'ref', value: '$.ref']
+            ],
+            causeString: 'Triggered by Gitea',
+            token: 'my-secret-gitea-token-123',  // <-- This is YOUR_TOKEN
+            printContributedVariables: true,
+            printPostContent: true
+        )
+    }
+
     agent any
-    
+
     stages {
         stage('Checkout') {
             steps {
-                echo 'Code checked out from repository'
+                echo 'Code checked out from GitHub'
                 sh 'ls -la'
             }
         }
-        
+
         stage('Validate') {
             steps {
                 echo 'Validating project structure...'
-                sh 'test -f app.py && test -f requirements.txt'
+                sh '''
+                    echo "Checking for required files..."
+                    test -f app.py && echo "✓ app.py found" || echo "✗ app.py missing"
+                    test -f requirements.txt && echo "✓ requirements.txt found" || echo "✗ requirements.txt missing"
+                    test -f Jenkinsfile && echo "✓ Jenkinsfile found" || echo "✗ Jenkinsfile missing"
+                '''
             }
         }
-        
+
+        stage('Build Info') {
+            steps {
+                echo 'Displaying build information...'
+                sh '''
+                    echo "Repository: PythonTest-CICD-Assignment4"
+                    echo "Branch: ${GIT_BRANCH}"
+                    echo "Commit: ${GIT_COMMIT}"
+                    cat app.py
+                '''
+            }
+        }
+
         stage('Deploy') {
             steps {
-                echo 'Pipeline completed successfully!'
+                echo '✓ Pipeline completed successfully!'
+                echo "Build finished at: ${new Date()}"
             }
+        }
+    }
+    
+    post {
+        success {
+            echo '✓ Build SUCCESS - All stages passed!'
+        }
+        failure {
+            echo '✗ Build FAILED'
         }
     }
 }
@@ -158,13 +198,3 @@ pipeline {
 ## Conclusion
 
 Successfully implemented a complete CI/CD pipeline using Jenkins on Kubernetes with dual repository integration (GitHub and self-hosted Gitea). The pipeline automatically triggers on code changes from both sources, demonstrating enterprise-grade DevOps practices.
-
----
-
-## Assignment Deliverables
-
-✅ Jenkins running on Kubernetes cluster  
-✅ GitHub repository with Jenkinsfile  
-✅ Gitea repository integration  
-✅ Automated webhook triggers from both sources  
-✅ Documentation with screenshots
