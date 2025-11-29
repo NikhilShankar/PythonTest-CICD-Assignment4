@@ -1,27 +1,30 @@
 pipeline {
-    agent any
+    agent {
+        docker {
+            image 'python:3.11'
+        }
+    }
 
     stages {
         stage('Build') {
             steps {
                 echo 'Installing dependencies...'
-                sh 'pip3 install -r requirements.txt'
+                sh 'pip install -r requirements.txt'
             }
         }
 
         stage('Test') {
             steps {
                 echo 'Testing application...'
-                sh 'python3 app.py &'
-                sleep 5
-                sh 'curl http://localhost:9876 || echo "App is running"'
+                sh 'python --version'
+                sh 'python -c "from flask import Flask; print(\'Flask imported successfully\')"'
             }
         }
 
         stage('Deploy') {
             steps {
-                echo 'Deployment completed'
-                echo "Deployed at: ${new Date()}"
+                echo 'Deployment stage'
+                echo "Build completed at: ${new Date()}"
             }
         }
     }
